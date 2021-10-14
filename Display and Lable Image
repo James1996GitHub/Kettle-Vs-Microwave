@@ -1,0 +1,37 @@
+import os
+import cv2
+import numpy as np
+import pandas as pd
+import keras
+from keras.preprocessing import image
+from keras.applications.inception_v3 import preprocess_input
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+birdBrain = keras.models.load_model('/Users/james.smith1/Documents/birdBrainModel/InceptionV3/birdBrainModel.h5')
+imPath = '/Users/james.smith1/Documents/DataCollection /TestData/Microwave13.jpg'
+
+def Classify(imPath):
+    image = keras.preprocessing.image.load_img(imPath)
+    input_arr = keras.preprocessing.image.img_to_array(image)
+    input_arr = np.array([input_arr])  # Convert single image to a batch.
+    input_arr = keras.applications.inception_v3.preprocess_input(input_arr)
+    ypred = birdBrain.predict(input_arr)
+    print(ypred)
+    prediction = np.argmax(ypred, axis=1)
+    if prediction == 0:
+         return 'Kettle'
+    elif prediction == 1:
+        return 'Microwave'
+
+def Display(imPath,imClass):
+    print(imClass)
+    image = cv2.imread(imPath)
+    image1 = cv2.putText(image,imClass,(750,1000),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,0),3)
+    cv2.imshow('Window', image1)
+    cv2.waitKey(0)
+    #cv2.destroyAllWindows()
+
+imClass = Classify(imPath)
+Display(imPath,imClass)
+print('Finish')
