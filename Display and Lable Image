@@ -1,37 +1,63 @@
-import os
-import cv2
-import numpy as np
-import pandas as pd
+
 import keras
 from keras.preprocessing import image
-from keras.applications.inception_v3 import preprocess_input
+from keras.applications.xception import preprocess_input
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import numpy as np
 
-birdBrain = keras.models.load_model('/Users/james.smith1/Documents/birdBrainModel/InceptionV3/birdBrainModel.h5')
-imPath = '/Users/james.smith1/Documents/DataCollection /TestData/Microwave13.jpg'
+import tkinter as tk
+from tkinter import filedialog
 
-def Classify(imPath):
-    image = keras.preprocessing.image.load_img(imPath)
-    input_arr = keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])  # Convert single image to a batch.
-    input_arr = keras.applications.inception_v3.preprocess_input(input_arr)
-    ypred = birdBrain.predict(input_arr)
-    print(ypred)
-    prediction = np.argmax(ypred, axis=1)
-    if prediction == 0:
-         return 'Kettle'
-    elif prediction == 1:
-        return 'Microwave'
+import PIL
+from PIL import Image, ImageTk
 
-def Display(imPath,imClass):
-    print(imClass)
-    image = cv2.imread(imPath)
-    image1 = cv2.putText(image,imClass,(750,1000),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,0),3)
-    cv2.imshow('Window', image1)
-    cv2.waitKey(0)
-    #cv2.destroyAllWindows()
 
-imClass = Classify(imPath)
-Display(imPath,imClass)
-print('Finish')
+########################################################################################################################
+
+class ImClassifier:
+   def __init__(self, root):  # constructor does setting things up
+       self.root = root
+       self.imagePIL = None
+       self.selected_image = None
+       self.birdBrain = keras.models.load_model(
+           'Data/birdBrainModel.h5 copy')
+       self.selectBTn = tk.Button(self.root, text='Browse Files...', command=self.set_image)
+       self.classifyBTn = tk.Button(self.root, text='Classify Image', command=self.classify_image)
+       self.imageFrame = tk.Frame(self.root)
+       self.classFrame = tk.Frame(self.root)
+
+       self.selectBTn.pack(side='bottom', pady=10)
+       self.classifyBTn.pack(side='bottom')
+       self.imageFrame.pack(side='top')
+       self.classFrame.pack()
+
+
+   def set_image(self):
+       for widget in self.imageFrame.winfo_children():
+           widget.destroy()
+       for widget in self.classFrame.winfo_children():
+           widget.destroy()
+       self.root.filename = filedialog.askopenfilename(initialdir="", title='Select a File')
+       self.imagePIL = keras.preprocessing.image.load_img(self.root.filename)
+       resizedSelectedImage = self.imagePIL.resize((1000, 600))
+       self.selectedImage = ImageTk.PhotoImage(resizedSelectedImage)
+       selectedImageLable = tk.Label(self.imageFrame, image=self.selectedImage)
+       selectedImageLable.pack(side='top', expand=True, fill='both')
+
+   def classify_image(self):
+       for widget in self.classFrame.winfo_children():
+           widget.destroy()
+       imageResized = self.imagePIL.resize((299, 299))
+       input_arr = keras.preprocessing.image.img_to_array(imageResized)
+       input_arr = np.array([input_arr])  # Convert single image to a batch.
+       input_arr = keras.applications.xception.preprocess_input(input_arr)
+       ypred = self.birdBrain.predict(input_arr)
+       print(ypred)
+       prediction = np.argmax(ypred, axis=1)
+       if prediction == 0:
+           classLable = tk.Label(self.classFrame, text='KETTLE')
+           classLable.pack(side='top', expand=True, fill='both')
+       elif prediction == 1:
+           classLable = tk.Label(self.classFrame, text='MICROWAVE')
+           classLable.pack(side='top', expand=True, fill='both')
+
